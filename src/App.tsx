@@ -1,78 +1,126 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useState } from 'react';
+import {
+  Button,
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  StyleSheet,
+} from 'react-native';
+import Animated, {
+  Layout,
+  LightSpeedInLeft,
+  LightSpeedOutRight,
+} from 'react-native-reanimated';
 
-import React, { useEffect, useState } from 'react';
-import { FlatList, ListRenderItem, SafeAreaView, View } from 'react-native';
-import { Item } from './types';
-import { Card } from './Card';
+interface EventParticipant {
+  name: string;
+  id: string;
+}
 
-const ITEMS: Item[] = [
-  { id: 1, text: 'Item #1' },
-  { id: 2, text: 'Item #2' },
-  { id: 3, text: 'Item #3' },
-  { id: 4, text: 'Item #4' },
-  { id: 5, text: 'Item #5' },
-];
+const styles = StyleSheet.create({
+  participantView: {
+    borderBottomColor: 'black',
+    width: '100%',
+    borderBottomWidth: 1,
+    padding: 10,
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fffbeb',
+  },
+  listView: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: '100%',
+    paddingBottom: 30,
+  },
+  bottomRow: {
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
+  },
+  textInput: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fullWidth: {
+    width: '100%',
+  },
+});
 
-const CARD_WIDTH = 300;
+function Participant({
+  name,
+  onRemove,
+}: {
+  name: string;
+  onRemove: () => void;
+}) {
+  return (
+    <Animated.View
+      entering={LightSpeedInLeft}
+      exiting={LightSpeedOutRight}
+      layout={Layout.springify()}
+      style={styles.participantView}>
+      <Text>{name}</Text>
+      <Button title="Remove" color="red" onPress={onRemove} />
+    </Animated.View>
+  );
+}
 
-const keyExtractor = (item: Item) => `${item.id}`;
+export default function AnimatedListExample() {
+  const [inputValue, setInputValue] = useState('Name');
+  const [participantList, setParticipantList] = useState<EventParticipant[]>(
+    [],
+  );
 
-const Separator = () => <View style={{ marginHorizontal: 8 }} />;
+  const addParticipant = () => {
+    setParticipantList(
+      [{ name: inputValue, id: Date.now().toString() }].concat(participantList),
+    );
+  };
 
-const ANIMATION_DURATION = 750;
-
-const App = () => {
-  const [items, setItems] = useState(ITEMS);
-  const [removingIndex, setRemovingIndex] = useState<number>();
-
-  useEffect(() => {
-    setRemovingIndex(undefined);
-  }, [items.length]);
-
-  const renderItem: ListRenderItem<Item> = ({ item, index }) => {
-    const onRemove = () => {
-      setRemovingIndex(index);
-      setTimeout(() => {
-        setItems(currentItems => currentItems.filter(it => it.id !== item.id));
-      }, ANIMATION_DURATION);
-    };
-
-    return (
-      <Card
-        item={item}
-        cardWidth={CARD_WIDTH}
-        index={index}
-        removingIndex={removingIndex}
-        totalItemsCount={items.length}
-        isSecondToLast={index === items.length - 2}
-        onRemove={onRemove}
-      />
+  const removeParticipant = (id: string) => {
+    setParticipantList(
+      participantList.filter(participant => participant.id !== id),
     );
   };
 
   return (
-    <SafeAreaView>
-      <FlatList
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        ItemSeparatorComponent={Separator}
-        contentContainerStyle={{ padding: 16 }}
-        horizontal
-        pagingEnabled
-        snapToInterval={CARD_WIDTH + 8}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-      />
-    </SafeAreaView>
-  );
-};
+    <View style={styles.listView}>
+      <ScrollView style={styles.fullWidth}>
+        {participantList.map(participant => (
+          <Participant
+            key={participant.id}
+            name={participant.name}
+            onRemove={() => removeParticipant(participant.id)}
+          />
+        ))}
+      </ScrollView>
 
-export default App;
+      <View style={styles.bottomRow}>
+        <View style={styles.textInput}>
+          <Text>Add participant: </Text>
+          <TextInput
+            placeholder="Name"
+            value={inputValue}
+            onChangeText={setInputValue}
+          />
+        </View>
+
+        <Button
+          title="Add"
+          disabled={inputValue === ''}
+          onPress={addParticipant}
+        />
+      </View>
+    </View>
+  );
+}
